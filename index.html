@@ -3,36 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grebeshki - Staff Only</title>
+    <title>Grebeshki - Журнал событий</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #0f172a; color: white; font-family: sans-serif; }
-        .card { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 15px; }
-        .btn { background: #3b82f6; padding: 10px 20px; border-radius: 8px; font-weight: bold; }
+        .card { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #334155; }
+        .event-item { background: #1e293b; border-left: 4px solid #3b82f6; padding: 15px; margin-top: 10px; border-radius: 4px; }
+        .btn { background: #3b82f6; transition: 0.3s; }
+        .btn:hover { background: #2563eb; }
     </style>
 </head>
 <body class="p-5">
-    <div class="max-w-md mx-auto">
-        <h1 class="text-2xl font-bold mb-6 text-center">Гребешки: Заказ стаффа</h1>
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-3xl font-bold mb-2 text-center text-blue-400">Grebeshki</h1>
+        <p class="text-center text-gray-400 mb-8">Общий журнал событий и заметок</p>
         
         <div class="card">
-            <label class="block mb-2 text-sm">Кто заказывает?</label>
-            <input type="text" id="staffName" class="w-full p-2 rounded bg-slate-700 border-none mb-4" placeholder="Имя">
-            
-            <label class="block mb-2 text-sm">Что готовим?</label>
-            <textarea id="orderText" class="w-full p-2 rounded bg-slate-700 border-none h-24" placeholder="Например: Паста 2шт, без лука"></textarea>
-            
-            <button onclick="sendOrder()" id="sendBtn" class="w-full btn mt-4">Отправить на кухню</button>
+            <h2 class="text-lg font-semibold mb-4 text-blue-200">Добавить новое событие</h2>
+            <div class="grid grid-cols-1 gap-4">
+                <input type="text" id="eventDate" class="w-full p-3 rounded bg-slate-800 border border-slate-600 focus:outline-none focus:border-blue-500" placeholder="Какое число? (например, 25 марта)">
+                <input type="text" id="author" class="w-full p-3 rounded bg-slate-800 border border-slate-600 focus:outline-none focus:border-blue-500" placeholder="Кто пишет?">
+                <textarea id="eventDescription" class="w-full p-3 rounded bg-slate-800 border border-slate-600 h-24 focus:outline-none focus:border-blue-500" placeholder="Опишите событие..."></textarea>
+                <button onclick="addEvent()" id="addBtn" class="w-full btn p-3 rounded-lg font-bold">Опубликовать событие</button>
+            </div>
         </div>
 
-        <div id="status" class="text-center text-sm text-gray-400"></div>
+        <div id="eventsList">
+            <h2 class="text-xl font-bold mb-4">История событий:</h2>
+            <div id="loading" class="text-gray-500">Загрузка данных...</div>
+        </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Твой конфиг из Firebase
+        // ТВОЙ КОНФИГ (Проверь apiKey!)
         const firebaseConfig = {
           apiKey: "AIzaSyBXSuqxxrSO3Vu_HuekLOtTcHucdWUalYI", 
           authDomain: "grebeshki-66414.firebaseapp.com",
@@ -45,37 +51,64 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        window.sendOrder = async () => {
-            const name = document.getElementById('staffName').value;
-            const text = document.getElementById('orderText').value;
-            const btn = document.getElementById('sendBtn');
-            const status = document.getElementById('status');
+        // Функция добавления события
+        window.addEvent = async () => {
+            const date = document.getElementById('eventDate').value;
+            const author = document.getElementById('author').value;
+            const desc = document.getElementById('eventDescription').value;
+            const btn = document.getElementById('addBtn');
 
-            if (!name || !text) {
-                alert("Заполни все поля!");
+            if (!date || !author || !desc) {
+                alert("Заполни все поля: дату, имя и описание!");
                 return;
             }
 
             btn.disabled = true;
-            btn.innerText = "Отправка...";
+            btn.innerText = "Сохранение...";
 
             try {
-                await addDoc(collection(db, "orders"), {
-                    staffName: name,
-                    order: text,
-                    status: "new",
-                    timestamp: serverTimestamp()
+                await addDoc(collection(db, "journal"), {
+                    date: date,
+                    author: author,
+                    description: desc,
+                    createdAt: serverTimestamp()
                 });
-                status.innerText = "✅ Заказ улетел!";
-                document.getElementById('orderText').value = "";
+                // Очистка полей
+                document.getElementById('eventDate').value = "";
+                document.getElementById('eventDescription').value = "";
             } catch (e) {
-                console.error(e);
-                status.innerText = "❌ Ошибка! Проверь Rules в Firebase.";
-            } finally {
+                console.error("Ошибка:", e);
+                alert("Ошибка сохранения! Проверь Rules в Firebase.");
+                } finally {
                 btn.disabled = false;
-                btn.innerText = "Отправить на кухню";
+                btn.innerText = "Опубликовать событие";
             }
         };
+
+        // Живое обновление списка событий
+        const q = query(collection(db, "journal"), orderBy("createdAt", "desc"));
+        onSnapshot(q, (snapshot) => {
+            const list = document.getElementById('eventsList');
+            const loading = document.getElementById('loading');
+            if (loading) loading.remove();
+            
+            // Оставляем заголовок
+            list.innerHTML = '<h2 class="text-xl font-bold mb-4">История событий:</h2>';
+            
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const div = document.createElement('div');
+                div.className = 'event-item';
+                div.innerHTML = `
+                    <div class="flex justify-between text-sm text-blue-400 mb-1">
+                        <span>📅 ${data.date}</span>
+                        <span>👤 ${data.author}</span>
+                    </div>
+                    <p class="text-white">${data.description}</p>
+                `;
+                list.appendChild(div);
+            });
+        });
     </script>
 </body>
 </html>
