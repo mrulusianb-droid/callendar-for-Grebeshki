@@ -3,34 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grebeshki - Журнал событий</title>
+    <title>Grebeshki | Journal</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #0f172a; color: white; font-family: sans-serif; }
-        .card { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #334155; }
-        .event-item { background: #1e293b; border-left: 4px solid #3b82f6; padding: 15px; margin-top: 10px; border-radius: 4px; }
-        .btn { background: #3b82f6; transition: 0.3s; }
-        .btn:hover { background: #2563eb; }
+        body { 
+            background: radial-gradient(circle at top left, #1e293b, #0f172a); 
+            color: #f8fafc; 
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+        }
+        .glass { 
+            background: rgba(30, 41, 59, 0.7); 
+            backdrop-filter: blur(12px); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .event-card {
+            animation: slideIn 0.4s ease-out forwards;
+            opacity: 0;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        input, textarea {
+            transition: all 0.3s ease;
+        }
+        input:focus, textarea:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+        .gradient-text {
+            background: linear-gradient(90deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
     </style>
 </head>
-<body class="p-5">
+<body class="p-4 md:p-8">
     <div class="max-w-2xl mx-auto">
-        <h1 class="text-3xl font-bold mb-2 text-center text-blue-400">Grebeshki</h1>
-        <p class="text-center text-gray-400 mb-8">Общий журнал событий и заметок</p>
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-bold mb-2 tracking-tight gradient-text">Grebeshki</h1>
+            <p class="text-slate-400 font-light uppercase tracking-widest text-xs">Internal Event Log</p>
+        </header>
         
-        <div class="card">
-            <h2 class="text-lg font-semibold mb-4 text-blue-200">Добавить новое событие</h2>
-            <div class="grid grid-cols-1 gap-4">
-                <input type="text" id="eventDate" class="w-full p-3 rounded bg-slate-800 border border-slate-600 focus:outline-none focus:border-blue-500" placeholder="Какое число? (например, 25 марта)">
-                <input type="text" id="author" class="w-full p-3 rounded bg-slate-800 border border-slate-600 focus:outline-none focus:border-blue-500" placeholder="Кто пишет?">
-                <textarea id="eventDescription" class="w-full p-3 rounded bg-slate-800 border border-slate-600 h-24 focus:outline-none focus:border-blue-500" placeholder="Опишите событие..."></textarea>
-                <button onclick="addEvent()" id="addBtn" class="w-full btn p-3 rounded-lg font-bold">Опубликовать событие</button>
+        <div class="glass rounded-2xl p-6 mb-10">
+            <h2 class="text-lg font-semibold mb-5 flex items-center">
+                <span class="mr-2">📝</span> Новая запись
+            </h2>
+            <div class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="text" id="eventDate" class="w-full p-3 rounded-xl bg-slate-900/50 border border-slate-700 focus:outline-none" placeholder="Дата (напр. 25.03)">
+                    <input type="text" id="author" class="w-full p-3 rounded-xl bg-slate-900/50 border border-slate-700 focus:outline-none" placeholder="Ваше имя">
+                </div>
+                <textarea id="eventDescription" class="w-full p-3 rounded-xl bg-slate-900/50 border border-slate-700 h-28 focus:outline-none resize-none" placeholder="Что произошло в ресторане?"></textarea>
+                <button onclick="addEvent()" id="addBtn" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-bold text-white shadow-lg shadow-blue-900/20 transition-all active:scale-95">
+                    Опубликовать событие
+                </button>
             </div>
         </div>
 
-        <div id="eventsList">
-            <h2 class="text-xl font-bold mb-4">История событий:</h2>
-            <div id="loading" class="text-gray-500">Загрузка данных...</div>
+        <div id="eventsList" class="space-y-6">
+            <h2 class="text-xl font-bold mb-4 flex items-center px-2">
+                <span class="mr-2">🕒</span> Хронология
+            </h2>
+            <div id="loading" class="text-center py-10 text-slate-500">Загрузка ленты...</div>
         </div>
     </div>
 
@@ -38,20 +76,17 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // ТВОЙ КОНФИГ (Проверь apiKey!)
         const firebaseConfig = {
-          apiKey: "AIzaSyBXSuqxxrSO3Vu_HuekLOtTcHucdWUalYI", 
+          apiKey: "ВСТАВЬ_СВОЙ_API_KEY_ЗДЕСЬ", 
           authDomain: "grebeshki-66414.firebaseapp.com",
           projectId: "grebeshki-66414",
           storageBucket: "grebeshki-66414.appspot.com",
           messagingSenderId: "414605954652",
           appId: "1:414605954652:web:65e109d945f3c0512f456c"
         };
-
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Функция добавления события
         window.addEvent = async () => {
             const date = document.getElementById('eventDate').value;
             const author = document.getElementById('author').value;
@@ -59,12 +94,13 @@
             const btn = document.getElementById('addBtn');
 
             if (!date || !author || !desc) {
-                alert("Заполни все поля: дату, имя и описание!");
+                alert("Пожалуйста, заполните все поля!");
                 return;
             }
 
             btn.disabled = true;
-            btn.innerText = "Сохранение...";
+            btn.style.opacity = '0.7';
+            btn.innerText = "Сохраняем...";
 
             try {
                 await addDoc(collection(db, "journal"), {
@@ -73,38 +109,40 @@
                     description: desc,
                     createdAt: serverTimestamp()
                 });
-                // Очистка полей
-                document.getElementById('eventDate').value = "";
                 document.getElementById('eventDescription').value = "";
             } catch (e) {
-                console.error("Ошибка:", e);
-                alert("Ошибка сохранения! Проверь Rules в Firebase.");
-                } finally {
+                alert("Ошибка! Проверь права доступа.");
+            } finally {
                 btn.disabled = false;
+                btn.style.opacity = '1';
                 btn.innerText = "Опубликовать событие";
             }
         };
 
-        // Живое обновление списка событий
         const q = query(collection(db, "journal"), orderBy("createdAt", "desc"));
         onSnapshot(q, (snapshot) => {
             const list = document.getElementById('eventsList');
             const loading = document.getElementById('loading');
             if (loading) loading.remove();
             
-            // Оставляем заголовок
-            list.innerHTML = '<h2 class="text-xl font-bold mb-4">История событий:</h2>';
+            const header = '<h2 class="text-xl font-bold mb-4 flex items-center px-2"><span class="mr-2">🕒</span> Хронология</h2>';
+            list.innerHTML = header;
             
             snapshot.forEach((doc) => {
                 const data = doc.data();
                 const div = document.createElement('div');
-                div.className = 'event-item';
+                div.className = 'event-card glass p-5 rounded-2xl relative overflow-hidden';
                 div.innerHTML = `
-                    <div class="flex justify-between text-sm text-blue-400 mb-1">
-                        <span>📅 ${data.date}</span>
-                        <span>👤 ${data.author}</span>
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-bold text-blue-400 bg-blue-400/10 px-3 py-1 rounded-full border border-blue-400/20">
+                            📅 ${data.date}
+                        </span>
+                        <span class="text-xs text-slate-400 italic">
+                            от ${data.author}
+                        </span>
                     </div>
-                    <p class="text-white">${data.description}</p>
+                    <p class="text-slate-200 leading-relaxed">${data.description}</p>
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 blur-3xl rounded-full -mr-10 -mt-10"></div>
                 `;
                 list.appendChild(div);
             });
