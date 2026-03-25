@@ -1,242 +1,90 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>GREBESHKI</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Гребешки — Учет смен</title>
     <style>
-        :root {
-            --bg: #f2f2f7;
-            --card: #ffffff;
-            --black: #000000;
-            --gray: #8e8e93;
-            --red: #ff3b30;
-        }
-
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-        body {
-            margin: 0;
-            font-family: -apple-system, system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--black);
-        }
-
-        /* --- ЭКРАН ВХОДА --- */
-        #auth-screen {
-            padding: 100px 30px;
-            text-align: center;
-        }
-
-        .login-input {
-            width: 100%;
-            padding: 18px;
-            margin-bottom: 15px;
-            border-radius: 14px;
-            border: 1px solid #ddd;
-            font-size: 17px;
-            outline: none;
-        }
-
-        /* --- ГЛАВНЫЙ ЭКРАН --- */
-        .header {
-            padding: 60px 20px 20px;
-            background: #fff;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            box-shadow: 0 1px 0 rgba(0,0,0,0.1);
-        }
-
-        .logo { font-size: 22px; font-weight: 900; letter-spacing: -1px; }
-
-        .container { padding: 20px; }
-
-        .section-label {
-            font-size: 13px;
-            color: var(--gray);
-            font-weight: 600;
-            text-transform: uppercase;
-            margin: 0 0 10px 5px;
-        }
-
-        /* --- КАРТОЧКА СОБЫТИЯ --- */
-        .card {
-            background: var(--card);
-            border-radius: 18px;
-            padding: 20px;
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        }
-
-        .card-info h3 { margin: 0; font-size: 18px; font-weight: 700; }
-        .card-info p { margin: 5px 0 0; font-size: 14px; color: var(--gray); }
-
-        /* --- КНОПКИ --- */
-        .btn-main {
-            background: var(--black);
-            color: #fff;
-            border: none;
-            padding: 15px;
-            border-radius: 14px;
-            font-size: 17px;
-            font-weight: 600;
-            width: 100%;
-        }
-
-        .btn-add {
-            width: 40px;
-            height: 40px;
-            background: var(--black);
-            color: #fff;
-            border: none;
-            border-radius: 50%;
-            font-size: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .btn-logout {
-            font-size: 13px;
-            color: var(--gray);
-            border: none;
-            background: none;
-            margin-right: 10px;
-        }
-
-        .btn-del {
-            background: #fff5f5;
-            color: var(--red);
-            border: none;
-            padding: 8px 12px;
-            border-radius: 10px;
-            font-size: 12px;
-            font-weight: 600;
-        }
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f9; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #333; }
+        label { display: block; margin: 10px 0 5px; }
+        input, select, button { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #007bff; color: white; border: none; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #0056b3; }
+        .status { text-align: center; font-weight: bold; color: green; }
     </style>
 </head>
 <body>
 
-    <div id="auth-screen" style="display:none;">
-        <div class="logo" style="margin-bottom:40px; font-size:32px;">GREBESHKI</div>
-        <input type="text" id="user-name" class="login-input" placeholder="Ваше имя">
-        <button class="btn-main" onclick="handleLogin()">Войти в систему</button>
-    </div>
+<div class="container">
+    <h1>Гребешки 🐚</h1>
+    <p style="text-align: center;">Учет рабочих смен</p>
+    
+    <label for="workerName">Имя сотрудника:</label>
+    <input type="text" id="workerName" placeholder="Введите ваше имя">
 
-    <div id="main-app" style="display:none;">
-        <header class="header">
-            <div class="logo">GREBESHKI</div>
-            <div style="display:flex; align-items:center;">
-            <button class="btn-logout" onclick="handleLogout()">Выйти</button>
-                <button class="btn-add" onclick="addNewEvent()">+</button>
-            </div>
-        </header>
+    <label for="shiftType">Тип смены:</label>
+    <select id="shiftType">
+        <option value="Дневная">Дневная</option>
+        <option value="Ночная">Ночная</option>
+        <option value="Полная">Полная (сутки)</option>
+    </select>
 
-        <div class="container">
-            <div class="section-label">Календарь событий</div>
-            <div id="event-list"></div>
-        </div>
-    </div>
+    <button id="saveBtn">Записать смену</button>
+    <div id="status" class="status"></div>
+</div>
 
-    <script>
-        // Загрузка данных из памяти
-        let eventsData = JSON.parse(localStorage.getItem('grebeshki_events')) || [];
-        let userName = localStorage.getItem('grebeshki_user');
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // Функция отрисовки интерфейса
-        function render() {
-            const auth = document.getElementById('auth-screen');
-            const app = document.getElementById('main-app');
-            const list = document.getElementById('event-list');
+  // Твои настройки из Firebase Console
+  const firebaseConfig = {
+    apiKey: "AIzaSyAs-ТВОЙ-КЛЮЧ", 
+    authDomain: "grebeshki-66414.firebaseapp.com",
+    projectId: "grebeshki-66414",
+    storageBucket: "grebeshki-66414.appspot.com",
+    messagingSenderId: "953284617052",
+    appId: "1:953284617052:web:786c23547895abc123" // Замени на свой appId из консоли, если он другой
+  };
 
-            // Проверка логина
-            if (!userName) {
-                auth.style.display = 'block';
-                app.style.display = 'none';
-                return;
-            }
+  // Инициализация
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-            auth.style.display = 'none';
-            app.style.display = 'block';
+  const saveBtn = document.getElementById('saveBtn');
+  const status = document.getElementById('status');
 
-            // Очистка и отрисовка списка
-            list.innerHTML = eventsData.length ? '' : '<p style="text-align:center; color:#8e8e93; margin-top:50px;">Событий пока нет</p>';
-            
-            eventsData.forEach((ev, index) => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.innerHTML = `
-                    <div class="card-info">
-                        <h3>${ev.title}</h3>
-                        <p>${ev.date} • Автор: ${ev.author}</p>
-                    </div>
-                    <button class="btn-del" onclick="deleteEvent(${index})">Удалить</button>
-                `;
-                list.appendChild(card);
-            });
-        }
+  saveBtn.addEventListener('click', async () => {
+    const name = document.getElementById('workerName').value;
+    const shift = document.getElementById('shiftType').value;
 
-        // Логика входа
-        window.handleLogin = () => {
-            const name = document.getElementById('user-name').value;
-            if (name.trim() === "") return alert("Пожалуйста, введите имя");
-            localStorage.setItem('grebeshki_user', name);
-            userName = name;
-            render();
-        };
+    if (!name) {
+      alert("Пожалуйста, введи имя!");
+      return;
+    }
 
-        // Логика выхода
-        window.handleLogout = () => {
-            if (confirm("Вы действительно хотите выйти?")) {
-                localStorage.removeItem('grebeshki_user');
-                userName = null;
-                render();
-            }
-        };
+    saveBtn.disabled = true;
+    saveBtn.innerText = "Сохраняю...";
 
-        // Добавление события
-        window.addNewEvent = () => {
-            const title = prompt("Что произойдет?");
-            if (!title) return;
+    try {
+      await addDoc(collection(db, "shifts"), {
+        worker: name,
+        type: shift,
+        date: serverTimestamp()
+      });
+      status.innerText = "✅ Смена успешно записана!";
+      document.getElementById('workerName').value = "";
+    } catch (e) {
+      console.error("Ошибка при добавлении: ", e);
+      status.innerText = "❌ Ошибка. Проверь консоль.";
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.innerText = "Записать смену";
+    }
+  });
+</script>
 
-            const defaultDate = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
-            const date = prompt("Введите дату события:", defaultDate);
-            if (!date) return;
-
-            eventsData.unshift({
-                title: title,
-                date: date,
-                author: userName
-            });
-            saveAndRefresh();
-        };
-
-        // Удаление
-        window.deleteEvent = (index) => {
-            if (confirm("Удалить это событие?")) {
-                eventsData.splice(index, 1);
-                saveAndRefresh();
-            }
-        };
-
-        function saveAndRefresh() {
-            localStorage.setItem('grebeshki_events', JSON.stringify(eventsData));
-            render();
-        }
-
-        // Запуск приложения
-        render();
-    </script>
 </body>
 </html>
