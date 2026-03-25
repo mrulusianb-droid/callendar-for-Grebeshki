@@ -3,88 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Гребешки — Учет смен</title>
+    <title>Grebeshki - Staff Only</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f9; }
-        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #333; }
-        label { display: block; margin: 10px 0 5px; }
-        input, select, button { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { background-color: #007bff; color: white; border: none; cursor: pointer; font-size: 16px; }
-        button:hover { background-color: #0056b3; }
-        .status { text-align: center; font-weight: bold; color: green; }
+        body { background-color: #0f172a; color: white; font-family: sans-serif; }
+        .card { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 15px; }
+        .btn { background: #3b82f6; padding: 10px 20px; border-radius: 8px; font-weight: bold; }
     </style>
 </head>
-<body>
+<body class="p-5">
+    <div class="max-w-md mx-auto">
+        <h1 class="text-2xl font-bold mb-6 text-center">Гребешки: Заказ стаффа</h1>
+        
+        <div class="card">
+            <label class="block mb-2 text-sm">Кто заказывает?</label>
+            <input type="text" id="staffName" class="w-full p-2 rounded bg-slate-700 border-none mb-4" placeholder="Имя">
+            
+            <label class="block mb-2 text-sm">Что готовим?</label>
+            <textarea id="orderText" class="w-full p-2 rounded bg-slate-700 border-none h-24" placeholder="Например: Паста 2шт, без лука"></textarea>
+            
+            <button onclick="sendOrder()" id="sendBtn" class="w-full btn mt-4">Отправить на кухню</button>
+        </div>
 
-<div class="container">
-    <h1>Гребешки 🐚</h1>
-    <p style="text-align: center;">Учет рабочих смен</p>
-    
-    <label for="workerName">Имя сотрудника:</label>
-    <input type="text" id="workerName" placeholder="Введите ваше имя">
+        <div id="status" class="text-center text-sm text-gray-400"></div>
+    </div>
 
-    <label for="shiftType">Тип смены:</label>
-    <select id="shiftType">
-        <option value="Дневная">Дневная</option>
-        <option value="Ночная">Ночная</option>
-        <option value="Полная">Полная (сутки)</option>
-    </select>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    <button id="saveBtn">Записать смену</button>
-    <div id="status" class="status"></div>
-</div>
+        // Твой конфиг из Firebase
+        const firebaseConfig = {
+          apiKey: "AIzaSyBXSuqxxrSO3Vu_HuekLOtTcHucdWUalYI", 
+          authDomain: "grebeshki-66414.firebaseapp.com",
+          projectId: "grebeshki-66414",
+          storageBucket: "grebeshki-66414.appspot.com",
+          messagingSenderId: "414605954652",
+          appId: "1:414605954652:web:65e109d945f3c0512f456c"
+        };
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-  // Твои настройки из Firebase Console
-  const firebaseConfig = {
-    apiKey: "AIzaSyAs-ТВОЙ-КЛЮЧ", 
-    authDomain: "grebeshki-66414.firebaseapp.com",
-    projectId: "grebeshki-66414",
-    storageBucket: "grebeshki-66414.appspot.com",
-    messagingSenderId: "953284617052",
-    appId: "1:953284617052:web:786c23547895abc123" // Замени на свой appId из консоли, если он другой
-  };
+        window.sendOrder = async () => {
+            const name = document.getElementById('staffName').value;
+            const text = document.getElementById('orderText').value;
+            const btn = document.getElementById('sendBtn');
+            const status = document.getElementById('status');
 
-  // Инициализация
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+            if (!name || !text) {
+                alert("Заполни все поля!");
+                return;
+            }
 
-  const saveBtn = document.getElementById('saveBtn');
-  const status = document.getElementById('status');
+            btn.disabled = true;
+            btn.innerText = "Отправка...";
 
-  saveBtn.addEventListener('click', async () => {
-    const name = document.getElementById('workerName').value;
-    const shift = document.getElementById('shiftType').value;
-
-    if (!name) {
-      alert("Пожалуйста, введи имя!");
-      return;
-    }
-
-    saveBtn.disabled = true;
-    saveBtn.innerText = "Сохраняю...";
-
-    try {
-      await addDoc(collection(db, "shifts"), {
-        worker: name,
-        type: shift,
-        date: serverTimestamp()
-      });
-      status.innerText = "✅ Смена успешно записана!";
-      document.getElementById('workerName').value = "";
-    } catch (e) {
-      console.error("Ошибка при добавлении: ", e);
-      status.innerText = "❌ Ошибка. Проверь консоль.";
-    } finally {
-      saveBtn.disabled = false;
-      saveBtn.innerText = "Записать смену";
-    }
-  });
-</script>
-
+            try {
+                await addDoc(collection(db, "orders"), {
+                    staffName: name,
+                    order: text,
+                    status: "new",
+                    timestamp: serverTimestamp()
+                });
+                status.innerText = "✅ Заказ улетел!";
+                document.getElementById('orderText').value = "";
+            } catch (e) {
+                console.error(e);
+                status.innerText = "❌ Ошибка! Проверь Rules в Firebase.";
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Отправить на кухню";
+            }
+        };
+    </script>
 </body>
 </html>
